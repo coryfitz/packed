@@ -173,7 +173,7 @@ class SelfClosingTag(object):
         return ''.join(text)
     
 class PsxTag(object):
-    """Matches a self-closing tag and all of its attributes."""
+    """Matches a PSX tag and all of its attributes."""
 
     grammar = '<', name(), attr('attributes', Attributes), ignore(whitespace), '/>'
 
