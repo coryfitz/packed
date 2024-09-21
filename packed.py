@@ -4,7 +4,7 @@ import re
 import sys
 import os
 import functools
-from pypeg2 import parse, compose, List, name, maybe_some, attr, optional, ignore, Symbol, Enum, some
+from pypeg2 import parse, compose, List, name, maybe_some, attr, optional, ignore, Symbol, some
 
 __version__ = '0.2.3'
 
@@ -305,7 +305,6 @@ class PackedBlock(List):
 
         return ''.join(text)
 
-
 class NonPackedLine(List):
     """Matches a line without Packed syntax."""
     grammar = attr('content', re.compile('.*')), '\n'
@@ -423,8 +422,6 @@ class Component(object):
     def psx_render(self):
         raise NotImplementedError
     
-
-
 def packed(func):
     """Decorator function for packed functions."""
     @functools.wraps(func)
@@ -508,10 +505,6 @@ def psx_import(psx_file_path, component_to_import):
     sys.path = original_sys_path
 
     return imported_component
-
-
-
-
 
 if __name__ == "__main__":
     sys.exit(main(sys.argv[1:]))
