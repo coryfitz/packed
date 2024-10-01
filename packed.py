@@ -36,9 +36,16 @@ class Text(object):
         text_literal = repr(text_content)
         return f"{indent_str}{text_literal}"
 
-class String(object):
+class DoubleString(object):
     """Matches a double-quote delimited string."""
     grammar = '"', attr('value', re.compile(r'[^"]*')), '"'
+
+    def compose(self, parser):
+        return "'%s'" % self.value
+    
+class SingleString(object):
+    """Matches a single-quote delimited string."""
+    grammar = "'", attr('value', re.compile(r"[^']*")), "'"
 
     def compose(self, parser):
         return "'%s'" % self.value
@@ -53,12 +60,20 @@ class InlineCode(object):
             indent=indent_str,
             code=self.code
         )
+    
 
+    
 class StyleAttribute(object):
     """Matches inline styles and converts them to kebab-case CSS strings."""
-    grammar = '{', '{', attr('styles', maybe_some(name(), ':', optional(whitespace), [String, InlineCode], optional(whitespace), ';')), '}', '}'
+    grammar = '{', '{', attr('styles', maybe_some(name(), ':', optional(whitespace), [SingleString, DoubleString, InlineCode], optional(whitespace), optional(','), optional(whitespace))), '}', '}'
 
     def compose(self, parser, indent=0):
+
+        print('***')
+        print('styles')
+        print(self.styles)
+
+        print('***')
         
         styles_str = []
         style_name = self.styles[0].thing
@@ -66,27 +81,46 @@ class StyleAttribute(object):
         style_value = self.styles[2].value
 
         parsed_result = f"{style_name_kebab}: {style_value};"
-        parsed_result = f'"{parsed_result}"'
 
         styles_str.append(parsed_result)
 
         # Join all the CSS properties and values into one string
         composed_styles = ''.join(styles_str)
+
+        print('***')
+        print('composed styles')
+        print(self.styles)
+
+        print('***')
+
         return composed_styles
+
+
 
 class Attribute(object):
     """Matches an attribute formatted as either: key="value" or key={value} to handle strings and
     inline code in a similar style to JSX.
     """
-    grammar = name(), '=', attr('value', [StyleAttribute, String, InlineCode])
+    grammar = name(), '=', attr('value', [StyleAttribute, SingleString, DoubleString, InlineCode])
 
     def compose(self, parser, indent=0):
         indent_str = indent * "    "
-        return "{indent}'{name}': {value},".format(
-            indent=indent_str,
-            name=self.name,
-            value=self.value.compose(parser)
-        )
+
+        if isinstance(self.value, SingleString):
+            quote = "'"
+        elif isinstance(self.value, DoubleString):
+            quote = '"'
+        else:
+            quote = "'"
+
+        value = self.value.compose(parser)
+        if (value.startswith("'") and value.endswith("'")) or (value.startswith('"') and value.endswith('"')):
+            value = value[1:-1]
+
+        result_string = f"{indent_str}{quote}{self.name}{quote}: {quote}{value}{quote},"
+
+        return result_string
+
 
 class Attributes(List):
     """Matches zero or more attributes"""
@@ -126,17 +160,12 @@ class SelfClosingTag(object):
         'link', 'meta', 'param', 'source', 'track', 'wbr'
     ]
 
-    grammar = '<', attr('name', some([*SELF_CLOSING_TAGS])), attr('attributes', Attributes), optional(whitespace), '>'
+    grammar = '<', attr('name', re.compile('|'.join(SELF_CLOSING_TAGS))), attr('attributes', Attributes), optional(whitespace), '>'
 
     def get_name(self):
         return "'%s'" % self.name
 
     def compose(self, parser, indent=0, first=False):
-
-        print('*****')
-        print('Pre-Composed Attriubutes:')
-        print(self.attributes)
-        print('*****')
 
         text = []
 
@@ -149,11 +178,13 @@ class SelfClosingTag(object):
         paren_sep = '\n' if has_contents else ''
         contents_sep = ',\n' if has_contents else ''
 
+        name = self.get_name()
+
         text.append(
             "{indent}Elem({paren_sep}{indent_plus}{name}{contents_sep}".format(
                 indent=indent_str,
                 indent_plus=indent_plus_str if has_contents else '',
-                name=self.get_name(),
+                name=name,
                 paren_sep=paren_sep,
                 contents_sep=contents_sep,
             )
@@ -162,12 +193,6 @@ class SelfClosingTag(object):
         composed_attributes = self.attributes.compose(parser, followed_by_children=False, indent=indent + 1)
         text.append(composed_attributes)
 
-        print('*****')
-        print('Composed Attriubutes:')
-        print(composed_attributes)
-        print('*****')
-
-        # Since this is always self-closing due to grammar, we close the tag
         text.append(f"{end_indent_str})")  # Close the 'Elem' for self-closing tag
 
         return ''.join(text)
@@ -405,7 +430,6 @@ class Component(object):
 
             if 'style' in self.props and self.props['style']:
                 existing_style = elem.attributes.get('style', '')
-                print (existing_style)
                 new_style = f"{existing_style} {self.props['style']}".strip()
                 elem.attributes['style'] = new_style
         
