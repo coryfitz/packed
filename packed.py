@@ -6,7 +6,7 @@ import os
 import functools
 from pypeg2 import parse, compose, List, name, maybe_some, attr, optional, ignore, Symbol, some
 
-__version__ = '0.2.3'
+__version__ = '0.2.0'
 
 whitespace = re.compile(r'\s+')
 text = re.compile(r'[^<]+')
@@ -487,9 +487,6 @@ def main(args):
     return 0
 
 def psx_import(psx_file_path, component_to_import):
-    import os
-    import sys
-    from packed import translate_file_in_memory
 
     psx_dir = os.path.dirname(psx_file_path) or os.getcwd()
 
