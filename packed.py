@@ -61,41 +61,28 @@ class InlineCode(object):
             code=self.code
         )
     
-
-    
 class StyleAttribute(object):
     """Matches inline styles and converts them to kebab-case CSS strings."""
     grammar = '{', '{', attr('styles', maybe_some(name(), ':', optional(whitespace), [SingleString, DoubleString, InlineCode], optional(whitespace), optional(','), optional(whitespace))), '}', '}'
 
     def compose(self, parser, indent=0):
-
-        print('***')
-        print('styles')
-        print(self.styles)
-
-        print('***')
         
         styles_str = []
-        style_name = self.styles[0].thing
-        style_name_kebab = snake_to_kebab(style_name)
-        style_value = self.styles[2].value
 
-        parsed_result = f"{style_name_kebab}: {style_value};"
+        for i in range(len(self.styles)):
+            if i % 4 == 0:
 
-        styles_str.append(parsed_result)
+                style_name = self.styles[i].thing
+                style_name_kebab = snake_to_kebab(style_name)
+                style_value = self.styles[i + 2].value
 
-        # Join all the CSS properties and values into one string
+                parsed_result = f"{style_name_kebab}: {style_value};"
+
+                styles_str.append(parsed_result)
+
         composed_styles = ''.join(styles_str)
 
-        print('***')
-        print('composed styles')
-        print(self.styles)
-
-        print('***')
-
         return composed_styles
-
-
 
 class Attribute(object):
     """Matches an attribute formatted as either: key="value" or key={value} to handle strings and
@@ -114,13 +101,13 @@ class Attribute(object):
             quote = "'"
 
         value = self.value.compose(parser)
+
         if (value.startswith("'") and value.endswith("'")) or (value.startswith('"') and value.endswith('"')):
             value = value[1:-1]
 
         result_string = f"{indent_str}{quote}{self.name}{quote}: {quote}{value}{quote},"
 
         return result_string
-
 
 class Attributes(List):
     """Matches zero or more attributes"""
@@ -154,7 +141,6 @@ class ComponentName(object):
 class SelfClosingTag(object):
     """Matches a self-closing tag and all of its attributes."""
     
-    # List of standard HTML self-closing tags
     SELF_CLOSING_TAGS = [
         'area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 
         'link', 'meta', 'param', 'source', 'track', 'wbr'
