@@ -6,8 +6,6 @@ import os
 import functools
 from pypeg2 import parse, compose, List, name, maybe_some, attr, optional, ignore, Symbol, some
 
-__version__ = '0.2.0'
-
 whitespace = re.compile(r'\s+')
 text = re.compile(r'[^<]+')
 

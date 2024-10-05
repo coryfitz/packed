@@ -1,1 +1,3 @@
 *.pyc
+build/
+psx_syntax.egg-info/
