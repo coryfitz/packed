@@ -1,5 +1,5 @@
 
-Packed
+PSX Syntax
 ======
 
 .. image:: https://travis-ci.org/michaeljones/packed.svg?branch=master
